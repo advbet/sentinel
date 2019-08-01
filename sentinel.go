@@ -3,7 +3,7 @@ package sentinel
 import (
 	"errors"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"strings"
 	"sync"
 	"time"
