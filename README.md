@@ -1,3 +1,3 @@
 # sentinel
 
-Redis Sentinel for `github.com/garyburd/redigo` library.
+Redis Sentinel support for `github.com/garyburd/redigo` library.
