@@ -10,7 +10,7 @@ import (
 )
 
 
-// Client is an instance of redis sentinel client. It supports concurrent
+// Client is an instance of Redis Sentinel client. It supports concurrent
 // querying for master and slave addresses.
 type Client struct {
 	conn       redis.Conn
@@ -21,7 +21,7 @@ type Client struct {
 }
 
 // ClusterConfig is a configuration struct. It is used by applications using
-// this library to send declare Redis Sentinel configuration.
+// this library to pass Redis Sentinel cluster configuration.
 type ClusterConfig struct {
 	Name string
 	Sentinels []string
