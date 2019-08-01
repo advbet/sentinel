@@ -10,9 +10,9 @@ import (
 )
 
 
-// Sentinel is an instance of redis sentinel client. It supports concurrent
+// Client is an instance of redis sentinel client. It supports concurrent
 // querying for master and slave addresses.
-type Sentinel struct {
+type Client struct {
 	conn       redis.Conn
 	options    []redis.DialOption
 	addrs      []string
@@ -20,6 +20,8 @@ type Sentinel struct {
 	sync.Mutex
 }
 
+// ClusterConfig is a configuration struct. It is used by applications using
+// this library to send declare Redis Sentinel configuration.
 type ClusterConfig struct {
 	Name string
 	Sentinels []string
@@ -27,8 +29,10 @@ type ClusterConfig struct {
 	RedisTimeouts []time.Duration
 }
 
-func NewSentinelPool(conf ClusterConfig) *redis.Pool {
-	sentConn := NewSentinel(
+// NewPool creates redigo/redis.Pool instance based on ClusterConfig struct provided.
+// Pool instance is save to be used by redigo library.
+func NewPool(conf ClusterConfig) *redis.Pool {
+	sentConn := NewClient(
 		conf.Sentinels,
 		redis.DialConnectTimeout(conf.SentinelTimeouts[0]),
 		redis.DialReadTimeout(conf.SentinelTimeouts[1]),
@@ -69,16 +73,16 @@ func NewSentinelPool(conf ClusterConfig) *redis.Pool {
 	return sap
 }
 
-// NewSentinel creates a new sentinel client connection. Dial options passed to
+// NewClient creates a new sentinel client connection. Dial options passed to
 // this function will be used when connecting to the sentinel server. Make sure
 // to provide a short timeouts for all options (connect, read, write) as per
 // redis-sentinel client guidelines.
 //
 // Note that in a worst-case scenario, the timeout for performing an
-// operation with a Sentinel client may take (# sentinels) * timeout to try all
+// operation with a Client client may take (# sentinels) * timeout to try all
 // configured sentinel addresses.
-func NewSentinel(addrs []string, options ...redis.DialOption) *Sentinel {
-	return &Sentinel{
+func NewClient(addrs []string, options ...redis.DialOption) *Client {
+	return &Client{
 		options: options,
 		addrs:   addrs,
 	}
@@ -87,7 +91,7 @@ func NewSentinel(addrs []string, options ...redis.DialOption) *Sentinel {
 // do will atempt to execute single redis command on any of the configured
 // sentinel servers. In worst case it will try all sentinel servers exactly once
 // and return last encountered error.
-func (sc *Sentinel) do(cmd string, args ...interface{}) (interface{}, error) {
+func (sc *Client) do(cmd string, args ...interface{}) (interface{}, error) {
 	var err error
 	var reply interface{}
 
@@ -105,7 +109,7 @@ func (sc *Sentinel) do(cmd string, args ...interface{}) (interface{}, error) {
 
 // doOnce tries to execute single redis command on the sentinel connection. If
 // necessary it will dial before sending command.
-func (sc *Sentinel) doOnce(cmd string, args ...interface{}) (interface{}, error) {
+func (sc *Client) doOnce(cmd string, args ...interface{}) (interface{}, error) {
 	if sc.conn == nil {
 		var err error
 		sc.conn, err = redis.Dial("tcp", sc.addrs[sc.activeAddr], sc.options...)
@@ -124,7 +128,7 @@ func (sc *Sentinel) doOnce(cmd string, args ...interface{}) (interface{}, error)
 
 // MasterAddress looks up the configuration for a named monitored
 // instance set and returns the master's configuration.
-func (sc *Sentinel) MasterAddress(name string) (string, error) {
+func (sc *Client) MasterAddress(name string) (string, error) {
 	sc.Lock()
 	defer sc.Unlock()
 
@@ -134,7 +138,7 @@ func (sc *Sentinel) MasterAddress(name string) (string, error) {
 }
 
 // Close will close connection to the sentinel server if one is esatablised.
-func (sc *Sentinel) Close() {
+func (sc *Client) Close() {
 	sc.Lock()
 	defer sc.Unlock()
 
