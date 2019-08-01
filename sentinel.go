@@ -30,8 +30,12 @@ type ClusterConfig struct {
 }
 
 // NewPool creates redigo/redis.Pool instance based on ClusterConfig struct provided.
-// Pool instance is save to be used by redigo library.
-func NewPool(conf ClusterConfig) *redis.Pool {
+// Pool instance is safe to be used by redigo library. If config is invalid, error is returned.
+func NewPool(conf ClusterConfig) (*redis.Pool, error) {
+	if conf.Name == "" || len(conf.Sentinels) == 0 || len(conf.SentinelTimeouts) != 3 || len(conf.RedisTimeouts) != 3 {
+		return nil, errors.New("invalid sentinel config")
+	}
+
 	sentConn := NewClient(
 		conf.Sentinels,
 		redis.DialConnectTimeout(conf.SentinelTimeouts[0]),
@@ -70,7 +74,7 @@ func NewPool(conf ClusterConfig) *redis.Pool {
 		},
 	}
 
-	return sap
+	return sap, nil
 }
 
 // NewClient creates a new sentinel client connection. Dial options passed to
