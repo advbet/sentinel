@@ -20,27 +20,34 @@ type Client struct {
 	sync.Mutex
 }
 
+type Timeouts struct {
+	Connect time.Duration
+	Read    time.Duration
+	Write   time.Duration
+}
+
 // ClusterConfig is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
 type ClusterConfig struct {
 	Name string
 	Sentinels []string
-	SentinelTimeouts []time.Duration
-	RedisTimeouts []time.Duration
+	SentinelTimeouts Timeouts
+	RedisTimeouts Timeouts
 }
 
 // NewPool creates redigo/redis.Pool instance based on ClusterConfig struct provided.
 // Pool instance is safe to be used by redigo library. If config is invalid, error is returned.
 func NewPool(conf ClusterConfig) (*redis.Pool, error) {
-	if conf.Name == "" || len(conf.Sentinels) == 0 || len(conf.SentinelTimeouts) != 3 || len(conf.RedisTimeouts) != 3 {
+	//if conf.Name == "" || len(conf.Sentinels) == 0 || len(conf.SentinelTimeouts) != 3 || len(conf.RedisTimeouts) != 3 {
+	if conf.Name == "" || len(conf.Sentinels) == 0 || !conf.SentinelTimeouts.valid() || !conf.SentinelTimeouts.valid() {
 		return nil, errors.New("invalid sentinel config")
 	}
 
 	sentConn := NewClient(
 		conf.Sentinels,
-		redis.DialConnectTimeout(conf.SentinelTimeouts[0]),
-		redis.DialReadTimeout(conf.SentinelTimeouts[1]),
-		redis.DialWriteTimeout(conf.SentinelTimeouts[2]),
+		redis.DialConnectTimeout(conf.SentinelTimeouts.Connect),
+		redis.DialReadTimeout(conf.SentinelTimeouts.Read),
+		redis.DialWriteTimeout(conf.SentinelTimeouts.Write),
 	)
 
 	sap := &redis.Pool{
@@ -54,9 +61,9 @@ func NewPool(conf ClusterConfig) (*redis.Pool, error) {
 			c, err := redis.Dial(
 				"tcp",
 				masterAddr,
-				redis.DialConnectTimeout(conf.RedisTimeouts[0]),
-				redis.DialReadTimeout(conf.RedisTimeouts[1]),
-				redis.DialWriteTimeout(conf.RedisTimeouts[2]),
+				redis.DialConnectTimeout(conf.RedisTimeouts.Connect),
+				redis.DialReadTimeout(conf.RedisTimeouts.Read),
+				redis.DialWriteTimeout(conf.RedisTimeouts.Write),
 			)
 			if err != nil {
 				return nil, fmt.Errorf("dial error: %s", err)
@@ -106,6 +113,7 @@ func (sc *Client) do(cmd string, args ...interface{}) (interface{}, error) {
 			sc.activeAddr = (sc.activeAddr + 1) % len(sc.addrs)
 			continue
 		}
+		break
 	}
 
 	return reply, err
@@ -171,4 +179,8 @@ func TestRole(c redis.Conn, expectedRole string) error {
 		return errors.New("role check failed")
 	}
 	return nil
+}
+
+func (t *Timeouts) valid() bool {
+	return t.Connect.Nanoseconds() > 0 && t.Read.Nanoseconds() > 0 && t.Write.Nanoseconds() > 0
 }
