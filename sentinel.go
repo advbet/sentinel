@@ -26,18 +26,18 @@ type Timeouts struct {
 	Write   time.Duration
 }
 
-// ClusterConfig is a configuration struct. It is used by applications using
+// Config is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
-type ClusterConfig struct {
+type Config struct {
 	Master string
 	Sentinels []string
 	SentinelTimeouts Timeouts
 	RedisTimeouts Timeouts
 }
 
-// NewPool creates redigo/redis.Pool instance based on ClusterConfig struct provided.
+// NewPool creates redigo/redis.Pool instance based on Config struct provided.
 // Pool instance is safe to be used by redigo library. Error is returned if config is invalid
-func NewPool(conf ClusterConfig) (*redis.Pool, error) {
+func NewPool(conf Config) (*redis.Pool, error) {
 	if err := ValidateConfig(conf); err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func TestRole(c redis.Conn, expectedRole string) error {
 	return nil
 }
 
-func ValidateConfig(conf ClusterConfig) error {
+func ValidateConfig(conf Config) error {
 	if conf.Master == "" {
 		return errors.New("master is not set")
 	}
