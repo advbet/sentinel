@@ -29,18 +29,17 @@ type Timeouts struct {
 // ClusterConfig is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
 type ClusterConfig struct {
-	Name string
+	Master string
 	Sentinels []string
 	SentinelTimeouts Timeouts
 	RedisTimeouts Timeouts
 }
 
 // NewPool creates redigo/redis.Pool instance based on ClusterConfig struct provided.
-// Pool instance is safe to be used by redigo library. If config is invalid, error is returned.
+// Pool instance is safe to be used by redigo library. Error is returned if config is invalid
 func NewPool(conf ClusterConfig) (*redis.Pool, error) {
-	//if conf.Name == "" || len(conf.Sentinels) == 0 || len(conf.SentinelTimeouts) != 3 || len(conf.RedisTimeouts) != 3 {
-	if conf.Name == "" || len(conf.Sentinels) == 0 || !conf.SentinelTimeouts.valid() || !conf.SentinelTimeouts.valid() {
-		return nil, errors.New("invalid sentinel config")
+	if err := ValidateConfig(conf); err != nil {
+		return nil, err
 	}
 
 	sentConn := NewClient(
@@ -54,7 +53,7 @@ func NewPool(conf ClusterConfig) (*redis.Pool, error) {
 		MaxIdle:     10,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			masterAddr, err := sentConn.MasterAddress(conf.Name)
+			masterAddr, err := sentConn.MasterAddress(conf.Master)
 			if err != nil {
 				return nil, fmt.Errorf("sentinel: get master address: %s", err)
 			}
@@ -181,6 +180,23 @@ func TestRole(c redis.Conn, expectedRole string) error {
 	return nil
 }
 
-func (t *Timeouts) valid() bool {
-	return t.Connect.Nanoseconds() > 0 && t.Read.Nanoseconds() > 0 && t.Write.Nanoseconds() > 0
+func ValidateConfig(conf ClusterConfig) error {
+	if conf.Master == "" {
+		return errors.New("master is not set")
+	}
+	if len(conf.Sentinels) == 0 {
+		return errors.New("sentinel array is not set")
+	}
+	if conf.SentinelTimeouts.Connect.Nanoseconds() == 0 ||
+		conf.SentinelTimeouts.Read.Nanoseconds() == 0 ||
+		conf.SentinelTimeouts.Write.Nanoseconds() == 0 {
+		return errors.New("sentinel timeouts are not set")
+	}
+	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 ||
+		conf.RedisTimeouts.Read.Nanoseconds() == 0 ||
+		conf.RedisTimeouts.Write.Nanoseconds() == 0 {
+		return errors.New("redis timeouts are not set")
+	}
+
+	return nil
 }
