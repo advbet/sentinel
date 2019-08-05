@@ -20,19 +20,21 @@ type Client struct {
 	sync.Mutex
 }
 
-type Timeouts struct {
-	Connect time.Duration
-	Read    time.Duration
-	Write   time.Duration
-}
-
 // Config is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
 type Config struct {
 	Master string
 	Sentinels []string
-	SentinelTimeouts Timeouts
-	RedisTimeouts Timeouts
+	SentinelTimeouts struct {
+		Connect time.Duration
+		Read    time.Duration
+		Write   time.Duration
+	}
+	RedisTimeouts struct {
+		Connect time.Duration
+		Read    time.Duration
+		Write   time.Duration
+	}
 }
 
 // NewPool creates redigo/redis.Pool instance based on Config struct provided.
