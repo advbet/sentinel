@@ -35,4 +35,6 @@ Then pass this Config struct to `sentinel.NewPool()`:
 ```
 pool, err := sentinel.NewPool(conf)
 ```
+This will create `*redis.Pool` object which can be used by `gomodule/redigo` library.
+
 Note that all values are required to create sentinel pool.
