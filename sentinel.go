@@ -40,7 +40,7 @@ type Config struct {
 // NewPool creates redigo/redis.Pool instance based on Config struct provided.
 // Pool instance is safe to be used by redigo library. Error is returned if config is invalid
 func NewPool(conf Config) (*redis.Pool, error) {
-	if err := ValidateConfig(conf); err != nil {
+	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
 
@@ -182,7 +182,7 @@ func TestRole(c redis.Conn, expectedRole string) error {
 	return nil
 }
 
-func ValidateConfig(conf Config) error {
+func validateConfig(conf Config) error {
 	if conf.Master == "" {
 		return errors.New("master is not set")
 	}
