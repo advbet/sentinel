@@ -49,6 +49,7 @@ func NewPool(conf Config) (*redis.Pool, error) {
 		redis.DialConnectTimeout(conf.SentinelTimeouts.Connect),
 		redis.DialReadTimeout(conf.SentinelTimeouts.Read),
 		redis.DialWriteTimeout(conf.SentinelTimeouts.Write),
+		redis.DialPassword("pa55w0rd"),
 	)
 
 	sap := &redis.Pool{
