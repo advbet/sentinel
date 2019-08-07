@@ -145,7 +145,6 @@ func (sc *Client) doOnce(cmd string, args ...interface{}) (interface{}, error) {
 func (sc *Client) MasterAddress(name string) (string, error) {
 	sc.Lock()
 	defer sc.Unlock()
-	_, err := sc.do("AUTH", "user:pa55w0rd")
 	res, err := redis.Strings(sc.do("SENTINEL", "get-master-addr-by-name", name))
 	masterAddr := strings.Join(res, ":")
 	return masterAddr, err
