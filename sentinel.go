@@ -49,7 +49,6 @@ func NewPool(conf Config) (*redis.Pool, error) {
 		redis.DialConnectTimeout(conf.SentinelTimeouts.Connect),
 		redis.DialReadTimeout(conf.SentinelTimeouts.Read),
 		redis.DialWriteTimeout(conf.SentinelTimeouts.Write),
-		redis.DialPassword("pa55w0rd"),
 	)
 
 	sap := &redis.Pool{
@@ -145,7 +144,7 @@ func (sc *Client) doOnce(cmd string, args ...interface{}) (interface{}, error) {
 func (sc *Client) MasterAddress(name string) (string, error) {
 	sc.Lock()
 	defer sc.Unlock()
-
+	_, err := sc.do("AUTH", "pa55w0rd")
 	res, err := redis.Strings(sc.do("SENTINEL", "get-master-addr-by-name", name))
 	masterAddr := strings.Join(res, ":")
 	return masterAddr, err
