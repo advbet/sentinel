@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-
 // Client is an instance of Redis Sentinel client. It supports concurrent
 // querying for master and slave addresses.
 type Client struct {
@@ -23,8 +22,8 @@ type Client struct {
 // Config is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
 type Config struct {
-	Master string
-	Sentinels []string
+	Master           string
+	Sentinels        []string
 	SentinelTimeouts struct {
 		Connect time.Duration
 		Read    time.Duration
@@ -49,7 +48,7 @@ func NewPool(conf Config) (*redis.Pool, error) {
 		redis.DialConnectTimeout(conf.SentinelTimeouts.Connect),
 		redis.DialReadTimeout(conf.SentinelTimeouts.Read),
 		redis.DialWriteTimeout(conf.SentinelTimeouts.Write),
-		redis.DialPassword("pa55w0rd"),
+		redis.DialPassword("eiz8iiriuzae1xi1kuph4Oexe"),
 	)
 
 	sap := &redis.Pool{
