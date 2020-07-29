@@ -3,12 +3,12 @@ package sentinel
 import (
 	"errors"
 	"fmt"
-	"github.com/gomodule/redigo/redis"
 	"strings"
 	"sync"
 	"time"
-)
 
+	"github.com/gomodule/redigo/redis"
+)
 
 // Client is an instance of Redis Sentinel client. It supports concurrent
 // querying for master and slave addresses.
@@ -23,8 +23,8 @@ type Client struct {
 // Config is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
 type Config struct {
-	Master string
-	Sentinels []string
+	Master           string
+	Sentinels        []string
 	SentinelTimeouts struct {
 		Connect time.Duration
 		Read    time.Duration
@@ -40,8 +40,22 @@ type Config struct {
 // NewPool creates redigo/redis.Pool instance based on Config struct provided.
 // Pool instance is safe to be used by redigo library. Error is returned if config is invalid
 func NewPool(conf Config) (*redis.Pool, error) {
-	if err := validateConfig(conf); err != nil {
+	return newPool(conf, false)
+}
+
+// NewPubSubPool creates redigo/redis.Pool instance based on Config struct provided.
+// This is used to create pubSub pool where Redis read and write timeouts are being set to 0
+func NewPubSubPool(conf Config) (*redis.Pool, error) {
+	return newPool(conf, true)
+}
+
+func newPool(conf Config, pubSub bool) (*redis.Pool, error) {
+	if err := validateConfig(conf, pubSub); err != nil {
 		return nil, err
+	}
+	if pubSub {
+		conf.RedisTimeouts.Read = 0
+		conf.RedisTimeouts.Write = 0
 	}
 
 	sentConn := NewClient(
@@ -182,7 +196,7 @@ func TestRole(c redis.Conn, expectedRole string) error {
 	return nil
 }
 
-func validateConfig(conf Config) error {
+func validateConfig(conf Config, pubSub bool) error {
 	if conf.Master == "" {
 		return errors.New("master is not set")
 	}
@@ -195,8 +209,9 @@ func validateConfig(conf Config) error {
 		return errors.New("sentinel timeouts are not set")
 	}
 	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 ||
-		conf.RedisTimeouts.Read.Nanoseconds() == 0 ||
-		conf.RedisTimeouts.Write.Nanoseconds() == 0 {
+		(!pubSub &&
+			(conf.RedisTimeouts.Read.Nanoseconds() == 0 ||
+				conf.RedisTimeouts.Write.Nanoseconds() == 0)) {
 		return errors.New("redis timeouts are not set")
 	}
 
