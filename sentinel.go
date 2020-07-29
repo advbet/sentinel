@@ -40,22 +40,8 @@ type Config struct {
 // NewPool creates redigo/redis.Pool instance based on Config struct provided.
 // Pool instance is safe to be used by redigo library. Error is returned if config is invalid
 func NewPool(conf Config) (*redis.Pool, error) {
-	return newPool(conf, false)
-}
-
-// NewPubSubPool creates redigo/redis.Pool instance based on Config struct provided.
-// This is used to create pubSub pool where Redis read and write timeouts are being set to 0
-func NewPubSubPool(conf Config) (*redis.Pool, error) {
-	return newPool(conf, true)
-}
-
-func newPool(conf Config, pubSub bool) (*redis.Pool, error) {
-	if err := validateConfig(conf, pubSub); err != nil {
+	if err := validateConfig(conf); err != nil {
 		return nil, err
-	}
-	if pubSub {
-		conf.RedisTimeouts.Read = 0
-		conf.RedisTimeouts.Write = 0
 	}
 
 	sentConn := NewClient(
@@ -196,7 +182,7 @@ func TestRole(c redis.Conn, expectedRole string) error {
 	return nil
 }
 
-func validateConfig(conf Config, pubSub bool) error {
+func validateConfig(conf Config) error {
 	if conf.Master == "" {
 		return errors.New("master is not set")
 	}
@@ -208,10 +194,7 @@ func validateConfig(conf Config, pubSub bool) error {
 		conf.SentinelTimeouts.Write.Nanoseconds() == 0 {
 		return errors.New("sentinel timeouts are not set")
 	}
-	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 ||
-		(!pubSub &&
-			(conf.RedisTimeouts.Read.Nanoseconds() == 0 ||
-				conf.RedisTimeouts.Write.Nanoseconds() == 0)) {
+	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 {
 		return errors.New("redis timeouts are not set")
 	}
 
