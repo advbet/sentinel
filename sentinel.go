@@ -195,7 +195,7 @@ func validateConfig(conf Config) error {
 		return errors.New("sentinel timeouts are not set")
 	}
 	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 {
-		return errors.New("redis timeouts are not set")
+		return errors.New("redis connect timeout is not set")
 	}
 
 	return nil
