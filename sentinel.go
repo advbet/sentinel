@@ -3,12 +3,12 @@ package sentinel
 import (
 	"errors"
 	"fmt"
-	"github.com/gomodule/redigo/redis"
 	"strings"
 	"sync"
 	"time"
-)
 
+	"github.com/gomodule/redigo/redis"
+)
 
 // Client is an instance of Redis Sentinel client. It supports concurrent
 // querying for master and slave addresses.
@@ -23,8 +23,8 @@ type Client struct {
 // Config is a configuration struct. It is used by applications using
 // this library to pass Redis Sentinel cluster configuration.
 type Config struct {
-	Master string
-	Sentinels []string
+	Master           string
+	Sentinels        []string
 	SentinelTimeouts struct {
 		Connect time.Duration
 		Read    time.Duration
@@ -194,10 +194,8 @@ func validateConfig(conf Config) error {
 		conf.SentinelTimeouts.Write.Nanoseconds() == 0 {
 		return errors.New("sentinel timeouts are not set")
 	}
-	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 ||
-		conf.RedisTimeouts.Read.Nanoseconds() == 0 ||
-		conf.RedisTimeouts.Write.Nanoseconds() == 0 {
-		return errors.New("redis timeouts are not set")
+	if conf.RedisTimeouts.Connect.Nanoseconds() == 0 {
+		return errors.New("redis connect timeout is not set")
 	}
 
 	return nil
